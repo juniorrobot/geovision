@@ -3,6 +3,7 @@ import cv2
 import geojson
 import math
 import numpy as np
+import os
 import sys
 
 class Debugger:
@@ -122,7 +123,11 @@ def main(argv):
 
         gis = GIS(debug)
         gis.add_lines(lines)
-        gis.to_json()
+        json = gis.to_json()
+
+        output_path = os.path.join(args.outdir, "geo.json")
+        with open(output_path, "w") as output:
+            output.write(json)
 
 
 if __name__ == "__main__":
