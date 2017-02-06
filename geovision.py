@@ -177,6 +177,11 @@ def load_options(argv):
 
     return args
 
+def save_json(json, outdir):
+    output_path = os.path.join(outdir, "geo.json")
+    with open(output_path, "w") as output:
+        output.write(json)
+
 def main(argv):
     with Debugger() as debug:
         args = load_options(argv)
@@ -196,11 +201,7 @@ def main(argv):
         if lines:
             gis = GIS(debug)
             gis.add_lines(lines)
-            json = gis.to_json()
-
-            output_path = os.path.join(args.outdir, "geo.json")
-            with open(output_path, "w") as output:
-                output.write(json)
+            save_json(gis.to_json(), args.outdir)
 
 
 if __name__ == "__main__":
