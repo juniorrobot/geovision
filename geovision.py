@@ -15,6 +15,7 @@ Details:
 
 TODO:
     - More tuning of the Hough parameters
+    - Expose more parameters via command line
     - Use a neural network with trainable weights for larger context. (fun!)
 """
 
@@ -89,14 +90,39 @@ class Detector:
 
     def __init__(self, debugger=Debugger()):
         self._debug = debugger
+        self._hough_rho = 1.0
+        self._hough_theta = math.pi / 2
+        self._hough_threshold = 80
+        self._canny_threshold1 = 200
+        self._canny_threshold2 = 255
 
+    @property
+    def hough_rho(self):
+        return self._hough_rho
+
+    @hough_rho.setter
+    def hough_rho(self, rho):
+        self._hough_rho = rho
+
+    @property
+    def hough_theta(self):
+        return self._hough_theta
+
+    @hough_theta.setter
+    def hough_theta(self, theta):
+        self._hough_theta = theta
 
     def detect_roads(self, image_path):
         img = cv2.imread(image_path, cv2.IMREAD_COLOR)
         img_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        canny = cv2.Canny(img_gray, threshold1=200, threshold2=255)
+        canny = cv2.Canny(img_gray,
+                self._canny_threshold1, self._canny_threshold2)
         self._debug.image(canny)
-        filtered = cv2.HoughLinesP(canny, rho=1, theta=math.pi/2, threshold=80)
+        filtered = cv2.HoughLinesP(canny,
+                self._hough_rho, self._hough_theta, self._hough_threshold)
+        if filtered is None:
+            self._debug.log("No lines found")
+            return None
 
         lines = []
         for line in filtered[0]:
@@ -142,6 +168,10 @@ def load_options(argv):
             help="fully-qualified directory for the output")
     parser.add_argument("-v", "--verbosity", action="count",
             help="increase debug verbosity")
+    parser.add_argument("-r", "--rho", type=float,
+            help="Hough rho parameter")
+    parser.add_argument("-t", "--theta", type=float,
+            help="Hough theta parameter")
 
     args = parser.parse_args(argv)
 
@@ -157,15 +187,20 @@ def main(argv):
                 debug.show_images = True
 
         detect = Detector(debug)
+        if args.rho:
+            detect.hough_rho = args.rho
+        if args.theta:
+            detect.hough_theta = args.theta
+
         lines = detect.detect_roads(args.image)
+        if lines:
+            gis = GIS(debug)
+            gis.add_lines(lines)
+            json = gis.to_json()
 
-        gis = GIS(debug)
-        gis.add_lines(lines)
-        json = gis.to_json()
-
-        output_path = os.path.join(args.outdir, "geo.json")
-        with open(output_path, "w") as output:
-            output.write(json)
+            output_path = os.path.join(args.outdir, "geo.json")
+            with open(output_path, "w") as output:
+                output.write(json)
 
 
 if __name__ == "__main__":
