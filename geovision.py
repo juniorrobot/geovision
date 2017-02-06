@@ -1,3 +1,23 @@
+"""
+This module demonstrates basic functionality of the OpenCV and GeoJSON packages
+in Python 3 by performing rudimentary line detection of roads from an image and
+exporting those lines to a GeoJSON file.
+
+Example usage:
+    % python geovision.py --image /path/to/satellite/image.jpg --outdir=/tmp
+
+Full usage is available via the -h/--help argument.
+
+Details:
+    Road detection uses Canny edge detection to find initial segments. A Hough
+    transform is then applied in order to find straight lines and filter out
+    paths that are not well-connected to others.
+
+TODO:
+    - More tuning of the Hough parameters
+    - Use a neural network with trainable weights for larger context. (fun!)
+"""
+
 import argparse
 import cv2
 import geojson
@@ -7,6 +27,14 @@ import os
 import sys
 
 class Debugger:
+    """Basic debugging visualization.
+
+    Attributes:
+        show_images (bool): Render image data & display to window using cv2.
+        show_log (bool): Print log statements to stdout.
+
+    """
+
     def __init__(self):
         self._show_images = False
         self._show_log = False
@@ -52,6 +80,13 @@ class Debugger:
 
 
 class Detector:
+    """Detect objects within an image.
+
+    Attributes:
+        lines (list): Collection of detected lines.
+
+    """
+
     def __init__(self, debugger=Debugger()):
         self._debug = debugger
 
@@ -73,6 +108,9 @@ class Detector:
 
 
 class GIS:
+    """Collect geographic information for output to GeoJSON.
+    """
+
     def __init__(self, debugger=Debugger()):
         self._debug = debugger
         self._features = []
